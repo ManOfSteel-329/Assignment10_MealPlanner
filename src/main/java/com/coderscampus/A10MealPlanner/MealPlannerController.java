@@ -18,20 +18,39 @@ public class MealPlannerController {
     @Value("${spoonacular.urls.mealplan}") // "/mealplanner/generate"
     private String mealPlanEndPoint;
 
-    // http://localhost:8080/mealplanner/day?numCalories=2000&diet=vegetarian&exclusions=shellfish
     @GetMapping("mealplanner/day")
-    public ResponseEntity<DayResponse> getDayMeals(@RequestParam String numCalories, @RequestParam String diet, @RequestParam String exclusions) {
-        String url = String.format("%s%s?timeFrame=day&targetCalories=%s&diet=%s&exclude=%s&apiKey=%s", baseUrl, mealPlanEndPoint, numCalories, diet, exclusions, apiKey);
-        RestTemplate restTemplate = new RestTemplate();
+    public ResponseEntity<DayResponse> getDayMeals(@RequestParam(required = false) String numCalories,
+                                                   @RequestParam(required = false) String diet,
+                                                   @RequestParam(required = false) String exclusions) {
+        String url = getUrlString("day", numCalories, diet, exclusions);
+        System.out.println(url);
+        RestTemplate restTemplate = new RestTemplate(); //make restful calls. send fetch data
         DayResponse response = restTemplate.getForObject(url, DayResponse.class);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("mealplanner/week")
-    public ResponseEntity<WeekResponse> getWeekMeals(@RequestParam String numCalories,@RequestParam(required = false, defaultValue = "Gluten Free") String diet,@RequestParam String exclusions){
-        String url = String.format("%s%s?timeFrame=week&targetCalories=%s&diet=%s&exclude=%s&apiKey=%s", baseUrl, mealPlanEndPoint, numCalories, diet, exclusions, apiKey);
+    public ResponseEntity<WeekResponse> getWeekMeals(@RequestParam(required = false) String numCalories,
+                                                     @RequestParam(required = false) String diet,
+                                                     @RequestParam(required = false) String exclusions){
+        String url = getUrlString("week", numCalories, diet, exclusions);
         RestTemplate rt = new RestTemplate();
         WeekResponse response = rt.getForObject(url, WeekResponse.class);
         return ResponseEntity.ok(response);
+    }
+
+    private String getUrlString(String timeFrame, String numCalories, String diet, String exclusions) {
+        StringBuilder urlBuilder = new StringBuilder(baseUrl + mealPlanEndPoint + "?" + "timeFrame=" + timeFrame + "&apiKey=" + apiKey);
+        if (numCalories != null && !numCalories.isEmpty()) {
+            urlBuilder.append("&targetCalories=").append(numCalories);
+        }
+        if (diet != null && !diet.isEmpty()) {
+            urlBuilder.append("&diet=").append(diet);
+        }
+        if (exclusions != null && !exclusions.isEmpty()) {
+            urlBuilder.append("&exclude=").append(exclusions);
+        }
+        String url = urlBuilder.toString();
+        return url;
     }
 }
